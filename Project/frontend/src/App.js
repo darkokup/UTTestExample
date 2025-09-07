@@ -11,7 +11,6 @@ function App() {
   const [controls, setControls] = useState([]);
   const [formData, setFormData] = useState({});
   const [newType, setNewType] = useState('text');
-  const [entries, setEntries] = useState([]);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -19,7 +18,6 @@ function App() {
     fetch('http://localhost:8000/index.php')
       .then(res => res.json())
       .then(data => {
-        setEntries(data || []);
         if (data && data.length > 0) {
           const last = data[data.length - 1];
           restoreControlsAndData(last);
@@ -60,13 +58,7 @@ function App() {
         body: JSON.stringify(formData),
       });
       const data = await res.json();
-      if (data.success) {
-        // Reload entries and keep current formData
-        fetch('http://localhost:8000/index.php')
-          .then(res => res.json())
-          .then(data => setEntries(data || []))
-          .catch(() => setError('Failed to reload entries after save.'));
-      } else {
+      if (!data.success) {
         setError(data.error || 'Error saving data.');
       }
     } catch (err) {
@@ -78,30 +70,44 @@ function App() {
     <div className="App">
       {error && <div style={{ color: 'red', fontWeight: 'bold', marginBottom: 16 }}>{error}</div>}
       <h2>Dynamic Data Capture</h2>
-      <div style={{ marginBottom: 16 }}>
-        <select value={newType} onChange={e => setNewType(e.target.value)}>
-          {CONTROL_TYPES.map(opt => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
-        <button onClick={addControl} style={{ marginLeft: 8 }}>Add Control</button>
+      <div style={{
+        margin: '24px auto',
+        maxWidth: 400,
+        background: '#f8f9fa',
+        border: '1px solid #ddd',
+        borderRadius: 8,
+        padding: 20,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+        marginBottom: 32
+      }}>
+        <h4 style={{marginTop:0}}>Add a New Control</h4>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <select value={newType} onChange={e => setNewType(e.target.value)}>
+            {CONTROL_TYPES.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+          <button onClick={addControl} style={{ marginLeft: 8 }}>Add Control</button>
+        </div>
       </div>
-      <form onSubmit={handleSubmit}>
-        {controls.map(ctrl => (
-          <div key={ctrl.id} style={{ marginBottom: 8 }}>
-            <label>
-              {ctrl.type.charAt(0).toUpperCase() + ctrl.type.slice(1)}:
-              <input
-                type={ctrl.type}
-                value={formData[ctrl.id] || ''}
-                onChange={e => handleChange(ctrl.id, e.target.value)}
-                style={{ marginLeft: 8 }}
-              />
-            </label>
-          </div>
-        ))}
-        <button type="submit" disabled={controls.length === 0}>Save Data</button>
-      </form>
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <form onSubmit={handleSubmit} style={{ minWidth: 320 }}>
+          {controls.map(ctrl => (
+            <div key={ctrl.id} style={{ marginBottom: 8 }}>
+              <label>
+                {ctrl.type.charAt(0).toUpperCase() + ctrl.type.slice(1)}:
+                <input
+                  type={ctrl.type}
+                  value={formData[ctrl.id] || ''}
+                  onChange={e => handleChange(ctrl.id, e.target.value)}
+                  style={{ marginLeft: 8 }}
+                />
+              </label>
+            </div>
+          ))}
+          <button type="submit" disabled={controls.length === 0}>Save Data</button>
+        </form>
+      </div>
     </div>
   );
 }
