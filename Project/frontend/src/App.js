@@ -11,7 +11,6 @@ function App() {
   const [controls, setControls] = useState([]);
   const [formData, setFormData] = useState({});
   const [newType, setNewType] = useState('text');
-  const [message, setMessage] = useState('');
   const [entries, setEntries] = useState([]);
 
   useEffect(() => {
@@ -19,21 +18,25 @@ function App() {
       .then(res => res.json())
       .then(data => {
         setEntries(data || []);
-        // If there is at least one entry, use its keys/types to restore controls
         if (data && data.length > 0) {
           const last = data[data.length - 1];
-          const restoredControls = Object.keys(last.data).map((id, idx) => {
-            // Try to infer type from value
-            const value = last.data[id];
-            let type = 'text';
-            if (typeof value === 'number') type = 'number';
-            if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) type = 'date';
-            return { id, type };
-          });
-          setControls(restoredControls);
+          restoreControlsAndData(last);
         }
       });
+    // eslint-disable-next-line
   }, []);
+
+  const restoreControlsAndData = (entry) => {
+    const restoredControls = Object.keys(entry.data).map((id) => {
+      const value = entry.data[id];
+      let type = 'text';
+      if (typeof value === 'number') type = 'number';
+      if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) type = 'date';
+      return { id, type };
+    });
+    setControls(restoredControls);
+    setFormData(entry.data);
+  };
 
   const addControl = () => {
     const id = Date.now() + Math.random();
@@ -46,7 +49,6 @@ function App() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage('');
     try {
       const res = await fetch('http://localhost:8000/index.php', {
         method: 'POST',
@@ -55,19 +57,17 @@ function App() {
       });
       const data = await res.json();
       if (data.success) {
-        setMessage('Data saved successfully!');
-        setFormData({});
-        // Reload entries
+        // Reload entries and keep current formData
         fetch('http://localhost:8000/index.php')
           .then(res => res.json())
           .then(data => setEntries(data || []));
-      } else {
-        setMessage(data.error || 'Error saving data.');
       }
     } catch (err) {
-      setMessage('Error connecting to backend.');
+      // Error handling can be added here if needed
     }
   };
+
+
 
   return (
     <div className="App">
@@ -96,20 +96,7 @@ function App() {
         ))}
         <button type="submit" disabled={controls.length === 0}>Save Data</button>
       </form>
-      {message && <div style={{ marginTop: 16 }}>{message}</div>}
-      <hr style={{ margin: '32px 0' }} />
-      <h3>Previous Entries</h3>
-      {entries.length === 0 && <div>No entries yet.</div>}
-      {entries.map((entry, idx) => (
-        <div key={entry.id} style={{ marginBottom: 12, padding: 8, border: '1px solid #ccc' }}>
-          <div><b>Entry #{entry.id}</b> ({entry.created_at})</div>
-          <ul style={{ margin: 0, paddingLeft: 16 }}>
-            {Object.entries(entry.data).map(([key, value]) => (
-              <li key={key}><b>{key}:</b> {String(value)}</li>
-            ))}
-          </ul>
-        </div>
-      ))}
+
     </div>
   );
 }
