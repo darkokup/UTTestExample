@@ -12,6 +12,8 @@ function App() {
   const [formData, setFormData] = useState({});
   const [newType, setNewType] = useState('text');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+
 
   useEffect(() => {
     setError('');
@@ -51,6 +53,8 @@ function App() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccess(false);
+
     try {
       const res = await fetch('http://localhost:8000/index.php', {
         method: 'POST',
@@ -60,6 +64,9 @@ function App() {
       const data = await res.json();
       if (!data.success) {
         setError(data.error || 'Error saving data.');
+      } else {
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 3000);
       }
     } catch (err) {
       setError('Error connecting to backend.');
@@ -106,6 +113,9 @@ function App() {
             </div>
           ))}
           <button type="submit" disabled={controls.length === 0}>Save Data</button>
+          {success && (
+            <div style={{ color: 'green', marginTop: 12, fontWeight: 'bold' }}>Data Saved</div>
+          )}
         </form>
       </div>
     </div>
