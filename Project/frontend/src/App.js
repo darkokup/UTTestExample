@@ -12,8 +12,10 @@ function App() {
   const [formData, setFormData] = useState({});
   const [newType, setNewType] = useState('text');
   const [entries, setEntries] = useState([]);
+  const [error, setError] = useState('');
 
   useEffect(() => {
+    setError('');
     fetch('http://localhost:8000/index.php')
       .then(res => res.json())
       .then(data => {
@@ -22,7 +24,8 @@ function App() {
           const last = data[data.length - 1];
           restoreControlsAndData(last);
         }
-      });
+      })
+      .catch(() => setError('Failed to load entries from backend.'));
     // eslint-disable-next-line
   }, []);
 
@@ -49,6 +52,7 @@ function App() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     try {
       const res = await fetch('http://localhost:8000/index.php', {
         method: 'POST',
@@ -60,17 +64,19 @@ function App() {
         // Reload entries and keep current formData
         fetch('http://localhost:8000/index.php')
           .then(res => res.json())
-          .then(data => setEntries(data || []));
+          .then(data => setEntries(data || []))
+          .catch(() => setError('Failed to reload entries after save.'));
+      } else {
+        setError(data.error || 'Error saving data.');
       }
     } catch (err) {
-      // Error handling can be added here if needed
+      setError('Error connecting to backend.');
     }
   };
 
-
-
   return (
     <div className="App">
+      {error && <div style={{ color: 'red', fontWeight: 'bold', marginBottom: 16 }}>{error}</div>}
       <h2>Dynamic Data Capture</h2>
       <div style={{ marginBottom: 16 }}>
         <select value={newType} onChange={e => setNewType(e.target.value)}>
@@ -96,7 +102,6 @@ function App() {
         ))}
         <button type="submit" disabled={controls.length === 0}>Save Data</button>
       </form>
-
     </div>
   );
 }
