@@ -14,6 +14,7 @@ function App() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
+
   useEffect(() => {
     setError('');
     fetch('http://localhost:8000/index.php')
@@ -53,6 +54,7 @@ function App() {
     e.preventDefault();
     setError('');
     setSuccess(false);
+
     try {
       const res = await fetch('http://localhost:8000/index.php', {
         method: 'POST',
